@@ -8,6 +8,7 @@ compiler_log=false
 ninja_build=false
 keep_logs=false
 debug=false
+device=false
 flaky=""
 build_dir=""
 tests=()
@@ -32,6 +33,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -d|--debug)
             debug=true
+            shift
+            ;;
+        -D|--device)
+            device=true
             shift
             ;;
         -f|--flaky)
@@ -160,66 +165,7 @@ function run_ark() {
 
 function direct_test() {
 
-    inlined_ext_funcs=(
-    "escompat.ArrayBuffer::<ctor>"
-    "escompat.ArrayBuffer::doBoundaryCheck"
-    "escompat.ArrayBuffer::set"
-    # "escompat.Array::<ctor>"
-    "escompat.Array::ensureUnusedCapacity"
-    "escompat.Array::<get>length"
-    "escompat.Array::pushOne"
-    "escompat.Array::toString"
-    "escompat.Buffer::<ctor>"
-    "escompat.DataView::<get>byteLength"
-    "escompat.DataView::getUint8"
-    "escompat.DataView::getUint8Big"
-    "escompat.ETSGLOBAL::isNaN"
-    "escompat.IteratorResult::<ctor>"
-    "escompat.Uint8ClampedArray::clamp"
-    "escompat.Uint8ClampedArray::<ctor>"
-    "escompat.Uint8ClampedArray::<get>length"
-    "escompat.Uint8ClampedArray::set"
-    "escompat.Uint8ClampedArray::setUnsafe"
-    "escompat.Uint8ClampedArray::setUnsafeClamp"
-    "std.core.ArrayValue::getLength"
-    "std.core.ClassType::equals"
-    "std.core.ClassType::getMethod"
-    "std.core.ClassType::getMethodsNum"
-    "std.core.Console::addToBuffer"
-    "std.core.Console::<get>indent"
-    "std.core.Console::log"
-    "std.core.Console::print"
-    "std.core.Console::println"
-    "std.core.Double::compare"
-    "std.core.Double::<ctor>"
-    "std.core.Double::toDouble"
-    "std.core.ETSGLOBAL::getBootRuntimeLinker"
-    "std.core.Float::<ctor>"
-    "std.core.Floating::<ctor>"
-    "std.core.Float::toFloat"
-    "std.core.Float::unboxed"
-    "std.core.Int::<ctor>"
-    "std.core.Integral::<ctor>"
-    "std.core.Int::toInt"
-    "std.core.Int::toString"
-    "std.core.Lambda0::<ctor>"
-    "std.core.LogLevel::valueOf"
-    "std.core.Method::getName"
-    "std.core.Method::getType"
-    "std.core.Method::isStatic"
-    "std.core.Numeric::<ctor>"
-    "std.core.Object::<ctor>"
-    "std.core.Runtime::sameFloatValue"
-    "std.core.Runtime::sameNumberValue"
-    "std.core.Runtime::sameValue"
-    "std.core.StringBuilder::<ctor>"
-    "std.core.TypeAPI::getClassDescriptor"
-    "std.core.TypeAPI::getTypeDescriptor"
-    "std.core.Type::of"
-    "std.testing.arktest::assertCommon"
-    "std.testing.arktest::assertEQ"
-    "std.testing.arktest::assertTrue"
-    )
+    inlined_ext_funcs=()
 
     test=$1
 
@@ -242,42 +188,11 @@ function direct_test() {
 
     blacklist=$(IFS=,; echo "${inlined_ext_funcs[*]}")
 
-    # set +e
-    # run_flaky 1 10 run_ark
-    # run_ark "${blacklist}"
-    run_ark
-
-    # inlined_ext_funcs=(
-    #     "escompat.Array::<ctor>"
-    # )
-
-    # # blacklist=()
-    # # for i in "${!inlined_ext_funcs[@]}"; do
-    # for func in "${inlined_ext_funcs[@]}"; do
-    #     # blacklist+=("${func}")
-    #     blacklist_str=$(IFS=,; echo "${blacklist[*]}")
-    #     echo
-    #     echo "BLACKLIST: ${blacklist_str}"
-    #     echo "Run ark_aot:"
-    #     aot_options=(
-    #         --compiler-inline-external-methods-aot=true
-    #         # --log-debug=compiler
-    #         # --compiler-log=inlining
-    #         --compiler-inlining-blacklist=${blacklist_str}
-    #         # --compiler-inlining-blacklist="escompat.IteratorResult::<ctor>,std.core.ArrayValue::getLength,std.core.Lambda0::<ctor>,std.core.Object::<ctor>,std.core.Double::<ctor>,std.core.Floating::<ctor>,std.core.Int::<ctor>,std.core.Integral::<ctor>,std.core.Int::toString,std.core.Numeric::<ctor>,std.core.StringBuilder::<ctor>,std.testing.arktest::assertCommon,std.testing.arktest::assertEQ,${test}.%%lambda-lambda_invoke-0::<ctor>,${test}.%%lambda-lambda_invoke-0::invoke0" \
-    #     )
-    #     ${BUILD_DIR}/bin/ark_aot --gc-type=g1-gc --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post --full-gc-bombing-frequency=0 --compiler-check-final=true --compiler-ignore-failures=false \
-    #         "${aot_options[@]}" \
-    #         --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --paoc-panda-files ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc --paoc-output ${BUILD_DIR}/es2p/intermediate/${test}.ets.an
-    #     echo "Run ark:"
-    #     ${BUILD_DIR}/bin/ark --enable-an:force --gc-type=g1-gc --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post --full-gc-bombing-frequency=0 --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --verification-mode=ahead-of-time --aot-files ${BUILD_DIR}/es2p/intermediate/${test}.ets.an --compiler-enable-jit=false --panda-files=${BUILD_DIR}/es2p/intermediate/${test}.ets.abc ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc ${test}.ETSGLOBAL::main
-    # done
+    run_ark "${blacklist}"
 }
 
 function es2p_runner() {
     runner_command=(
-        --ets-es-checked --es2panda-opt-level=2 --es2panda-timeout=90 --timeout=95 --gdb-timeout=5 --gc-type=g1-gc --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post --aot --aot-args=--compiler-check-final=true --aot-args=--compiler-ignore-failures=false --ark-args=--enable-an:force --work-dir /home/jenkins/agent/workspace/Panda/Panda-RunOnly/archives/ets-es-checked --processes=16
-
         ${STATIC_ROOT_DIR}/tests/tests-u-runner/runner.sh
         --ets-es-checked
         --build-dir="${BUILD_DIR}"
@@ -333,143 +248,124 @@ fi
 
 # exit 0
 
-# Store process IDs
-pids=()
+if [[ $device == true ]]; then
 
-# Launch multiple tasks
-for t in ${tests[@]}; do
-    direct_test $t &
-    pids+=($!)
-    echo $t
-done
+function HDC() {
+    hdc -s ${HDC_SERVER_IP_PORT} -t ${HDC_DEVICE_SERIAL} ${@}
+}
+function HDC_SEND() {
+    hdc -s ${HDC_SERVER_IP_PORT} -t ${HDC_DEVICE_SERIAL} file send ${@}
+}
 
-# Wait for all processes and collect exit codes
-exit_codes=()
-for pid in "${pids[@]}"; do
-    wait $pid
-    exit_codes+=($?)
-done
+lock_device()
+{
+    if [[ `HDC shell file $MUTEX` == *"cannot"* ]]; then
+        echo Device is free - locking...
+        HDC shell "echo $USER > $MUTEX"
+        return 0
+    else
+        echo Device is busy by `HDC shell cat $MUTEX` ...
+        return 1
+    fi        
+}
+ 
+release_device()
+{
+    echo Release device
+    HDC shell rm $MUTEX
+}
 
-# Display results
-echo "All tasks completed"
-for i in "${!exit_codes[@]}"; do
-    echo "Task $((i+1)) exit code: ${exit_codes[i]}"
-done
+MUTEX=/data/local/tmp/mutex
+MODE=release
+
+trap release_device EXIT INT TERM HUP
 
 
-
-exit 0
+test=${tests[0]}
 
 set -e
 
-# es2p "escompat.Array::<ctor>"
-direct_test
-# es2p
+es2panda_command=(
+    ${BUILD_DIR}/bin/es2panda
+    --arktsconfig=${BUILD_DIR}/tools/es2panda/generated/arktsconfig.json
+    --gen-stdlib=false
+    --extension=ets
+    --opt-level=2
+    --output=${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+    ${BUILD_DIR}/es2p/gen/${test}.ets
+)
+"${es2panda_command[@]}"
 
-# run_flaky es2p 2 10
+ark_aot_command=(
+    ${BUILD_DIR}/bin/ark_aot
+    --gc-type=g1-gc
+    --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
+    --full-gc-bombing-frequency=0
+    --compiler-check-final=true
+    --compiler-ignore-failures=false
+    "${aot_options[@]}"
+    --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc
+    --load-runtimes=ets
+    --paoc-panda-files
+    ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+    --paoc-output
+    ${BUILD_DIR}/es2p/intermediate/${test}.ets.an
+)
+"${ark_aot_command[@]}"
 
-# run_flaky 1 10 es2p
+if ! lock_device; then
+    exit
+fi
 
+TEMP_DIR=${BUILD_DIR}/es2p/intermediate
+TEST=${test}.ets
 
-#         --aot-args="--log-debug=compiler" --aot-args="--compiler-log=inlining" \
+HDC_SEND $TEMP_DIR/$TEST.abc $DEV_HOME/$TEST.abc
+HDC_SEND $TEMP_DIR/$TEST.an $DEV_HOME/$TEST.an 
 
-# /media/share/panda/panda2/jenkins-ci/scripts/es2panda_test.sh -- \
-#     --ets-es-checked --es2panda-opt-level=2 --es2panda-timeout=90 \
-#     --timeout=65 --gdb-timeout=5 --gc-type=g1-gc \
-#     --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post \
-#     --aot --aot-args='--compiler-check-final=true' \
-#     --aot-args='--compiler-ignore-failures=false' \
-#     --ark-args='--enable-an:force' \
-#     --work-dir ${WORK_DIR} \
-#     --processes=16
+ark_command=(
+    --enable-an:force
+    --gc-type=g1-gc
+    --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
+    --full-gc-bombing-frequency=0
+    --boot-panda-files=$DEV_HOME/etsstdlib.abc
+    --load-runtimes=ets
+    --verification-mode=ahead-of-time
+    --aot-files=$DEV_HOME/$TEST.an
+    --compiler-enable-jit=false
+    --panda-files=$DEV_HOME/$TEST.abc
+    $DEV_HOME/$TEST.abc
+    ${test}.ETSGLOBAL::main
+)
+HDC shell "(hilog -r) && \time -v /system/bin/taskset -a 3F0 env LD_LIBRARY_PATH=$DEV_HOME/lib $DEV_HOME/ark ${ark_command[@]}"
 
-# ./es2panda_test.sh -- --ets-runtime --es2panda-opt-level=2 --es2panda-timeout=90 --timeout=60 --gc-type=g1-gc --aot --aot-args='--compiler-check-final=true' --aot-args='--compiler-ignore-failures=false' --ark-args='--enable-an:force' --test-list-arch=amd64 --work-dir /home/jenkins/agent/workspace/Panda/Pre_Merge_ETS_ARM_Tests/archives/ets-runtime --processes=16
+release_device
 
-# /media/share/panda/panda2/jenkins-ci/scripts/es_checked_setup.sh -- \
-#     --ets-es-checked --es2panda-opt-level=2 --es2panda-timeout=90 --timeout=65 \
-#     --gdb-timeout=5 --gc-type=g1-gc \
-#     --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post \
-#     --aot --aot-args='--compiler-check-final=true' \
-#     --aot-args='--compiler-ignore-failures=false' \
-#     --ark-args='--enable-an:force' \
-#     --work-dir ${WORK_DIR} \
-#     --processes=16
+elif [ ${#tests[@]} -eq 0 ]; then
+    es2p
+elif [ ${#tests[@]} -eq 1 ]; then
+    direct_test ${tests[0]}
+else
+    # Store process IDs
+    pids=()
 
+    # Launch multiple tasks
+    for t in ${tests[@]}; do
+        direct_test $t &
+        pids+=($!)
+        echo $t
+    done
 
+    # Wait for all processes and collect exit codes
+    exit_codes=()
+    for pid in "${pids[@]}"; do
+        wait $pid
+        exit_codes+=($?)
+    done
 
-
-# [2025-09-12T08:27:43.404Z] Program terminated with signal SIGSEGV, Segmentation fault.
-
-# [2025-09-12T08:27:43.404Z] #0  0x00007ff37cdeb75b in kill () from /lib/x86_64-linux-gnu/libc.so.6
-
-# [2025-09-12T08:27:43.404Z] [Current thread is 1 (Thread 0x7ff37cc15840 (LWP 113808))]
-
-# [2025-09-12T08:27:43.404Z] #0  0x00007ff37cdeb75b in kill () from /lib/x86_64-linux-gnu/libc.so.6
-
-# [2025-09-12T08:27:43.404Z] #1  0x00007ff37d40bac7 in ark::SignalHook::CallOldAction (signo=11, siginfo=0x7ffe489d9130, ucontextRaw=0x7ffe489d9000) at /panda_src/runtime_core/static_core/platforms/unix/libpandabase/sighook.cpp:204
-
-# [2025-09-12T08:27:43.404Z] #2  <signal handler called>
-
-# [2025-09-12T08:27:43.404Z] #3  std::__atomic_base<unsigned int>::load (this=0x2, __m=std::memory_order_acquire) at /usr/bin/../lib/gcc/x86_64-linux-gnu/11/../../../../include/c++/11/bits/atomic_base.h:488
-
-# [2025-09-12T08:27:43.404Z] #4  ark::Method::IsNative (this=0x2) at /panda_src/runtime_core/static_core/runtime/include/method.h:526
-
-# [2025-09-12T08:27:43.404Z] #5  ark::CFrame::IsNativeMethod (this=0x7ffe489d9d40) at /panda_src/runtime_core/static_core/runtime/cframe.cpp:26
-
-# [2025-09-12T08:27:43.404Z] #6  0x00007ff37f934c45 in ark::StackWalker::CreateCFrame (this=0x7ffe489da070, ptr=0x7ffe489dbce8, npc=140683337873978, calleeSlots=0x0, prevCallees=prevCallees@entry=0x0) at /panda_src/runtime_core/static_core/runtime/stack_walker.cpp:140
-
-# [2025-09-12T08:27:43.404Z] #7  0x00007ff37f934af2 in ark::StackWalker::GetTopFrameFromFp (this=0x7ffe489da070, ptr=<optimized out>, isFrameCompiled=<optimized out>, npc=<optimized out>) at /panda_src/runtime_core/static_core/runtime/stack_walker.cpp:64
-
-# [2025-09-12T08:27:43.404Z] #8  ark::StackWalker::StackWalker (this=0x7ffe489da070, fp=<optimized out>, isFrameCompiled=<optimized out>, npc=<optimized out>, policy=ark::UnwindPolicy::ALL) at /panda_src/runtime_core/static_core/runtime/stack_walker.cpp:45
-
-# [2025-09-12T08:27:43.404Z] #9  0x00007ff37f934856 in ark::StackWalker::Create (thread=0x7ff37c877ce0, policy=ark::UnwindPolicy::ALL) at /panda_src/runtime_core/static_core/runtime/stack_walker.cpp:39
-
-# [2025-09-12T08:27:43.404Z] #10 0x00007ff37f960418 in ark::PrintStackTrace () at /panda_src/runtime_core/static_core/runtime/runtime_helpers.cpp:29
-
-# [2025-09-12T08:27:43.404Z] #11 0x00007ff37f944f2d in ark::CrashFallbackDumpHandler::Action (this=<optimized out>, sig=<optimized out>, siginfo=<optimized out>, context=<optimized out>) at /panda_src/runtime_core/static_core/runtime/signal_handler.cpp:459
-
-# [2025-09-12T08:27:43.404Z] #12 0x00007ff37f943411 in ark::SignalManager::SignalActionHandler (this=0x100f42b30, sig=11, info=0x7ffe489daff0, context=0x7ffe489daec0) at /panda_src/runtime_core/static_core/runtime/signal_handler.cpp:62
-
-# [2025-09-12T08:27:43.404Z] #13 0x00007ff37d40bbcd in ark::SignalHook::SetHandlingSignal (signo=signo@entry=11, siginfo=siginfo@entry=0x7ffe489daff0, ucontextRaw=ucontextRaw@entry=0x7ffe489daec0) at /panda_src/runtime_core/static_core/platforms/unix/libpandabase/sighook.cpp:226
-
-# [2025-09-12T08:27:43.404Z] #14 0x00007ff37d40beb7 in ark::SignalHook::Handler (signo=11, siginfo=0x7ffe489daff0, ucontextRaw=0x7ffe489daec0) at /panda_src/runtime_core/static_core/platforms/unix/libpandabase/sighook.cpp:241
-
-# [2025-09-12T08:27:43.405Z] #15 <signal handler called>
-
-# [2025-09-12T08:27:43.405Z] #16 0x00007ff33c380e4f in f64 escompat.Array::pushOne(escompat.Array, std.core.Object) () from /panda_src/artifacts/build/plugins/ets/etsstdlib.an
-
-# [2025-09-12T08:27:43.405Z] #17 0x00007ff364613c6e in escompat.Iterator uint16array_copyWithin14.ETSGLOBAL::getIteratorFromIterable(std.core.Object, std.core.Type) () from /archives/ets-es-checked/intermediate/uint16array_copyWithin14.ets.an
-
-# [2025-09-12T08:27:43.405Z] #18 0x00007ff364463623 in u1 uint16array_copyWithin14.ETSGLOBAL::__value_is_same(std.core.Object, std.core.Object) () from /archives/ets-es-checked/intermediate/uint16array_copyWithin14.ets.an
-
-# [2025-09-12T08:27:43.405Z] #19 0x00007ff36445f229 in void uint16array_copyWithin14.ETSGLOBAL::__check_value(std.core.Object, std.core.Object) () from /archives/ets-es-checked/intermediate/uint16array_copyWithin14.ets.an
-
-# [2025-09-12T08:27:43.405Z] #20 0x00007ff3643adfd5 in void uint16array_copyWithin14.ETSGLOBAL::test0() () from /archives/ets-es-checked/intermediate/uint16array_copyWithin14.ets.an
-
-# [2025-09-12T08:27:43.405Z] #21 0x00007ff3643ad1c7 in void uint16array_copyWithin14.ETSGLOBAL::main() () from /archives/ets-es-checked/intermediate/uint16array_copyWithin14.ets.an
-
-# [2025-09-12T08:27:43.405Z] #22 0x00007ff37fa9b28c in InvokeCompiledCodeWithArgArray () at /panda_src/runtime_core/static_core/runtime/bridge/arch/amd64/interpreter_to_compiled_code_bridge_amd64.S:534
-
-# [2025-09-12T08:27:43.405Z] #23 0x00007ff37f8b4f85 in ark::Method::InvokeCompiledCode (this=0x7ff35c3d9718, this@entry=0x0, thread=0x7ff37c877ce0, thread@entry=0x7ff35c3d9718, numArgs=numArgs@entry=32766, args=args@entry=0x7ff35c3d9718) at /panda_src/runtime_core/static_core/runtime/include/method-inl.h:203
-
-# [2025-09-12T08:27:43.405Z] #24 0x00007ff37f8b17aa in ark::Method::InvokeImpl<ark::InvokeHelperStatic, ark::Value> (this=0x7ff37cb54448, this@entry=0x7ff35c3d9718, thread=0xc3fe8, thread@entry=0x7ff37c877ce0, numActualArgs=836552, args=0x4, args@entry=0x0, proxyCall=<optimized out>) at /panda_src/runtime_core/static_core/runtime/include/method-inl.h:424
-
-# [2025-09-12T08:27:43.405Z] #25 0x00007ff37f8ae4fa in ark::Method::Invoke (this=0x7ff35c3d9718, thread=0x7ff37c877ce0, args=0x0, proxyCall=false) at /panda_src/runtime_core/static_core/runtime/method.cpp:228
-
-# [2025-09-12T08:27:43.405Z] #26 0x00007ff3800938c8 in ark::ets::PandaEtsVM::InvokeEntrypointImpl (this=0x7ff37c80d268, entrypoint=0x7ff35c3d9718, args=std::vector of length 0, capacity 0) at /panda_src/runtime_core/static_core/plugins/ets/runtime/ets_vm.cpp:573
-
-# [2025-09-12T08:27:43.405Z] #27 0x00007ff37f776740 in ark::PandaVM::InvokeEntrypoint (this=0x7ff37c80d268, entrypoint=0x7ff35c3d9718, args=std::vector of length 0, capacity 0) at /panda_src/runtime_core/static_core/runtime/panda_vm.cpp:60
-
-# [2025-09-12T08:27:43.405Z] #28 0x00007ff37f8d18a8 in ark::Runtime::Execute (this=0x100f19470, args=std::vector of length 112275813817026, capacity -35242 = {...}, entryPoint=...) at /panda_src/runtime_core/static_core/runtime/runtime.cpp:1268
-
-# [2025-09-12T08:27:43.405Z] #29 ark::Runtime::ExecutePandaFile (this=0x100f19470, filename=..., entryPoint=..., args=std::vector of length 112275813817026, capacity -35242 = {...}) at /panda_src/runtime_core/static_core/runtime/runtime.cpp:1254
-
-# [2025-09-12T08:27:43.405Z] #30 0x0000000100017f93 in ark::ExecutePandaFile (runtime=..., entry="uint16array_copyWithin14.ETSGLOBAL::main", arguments=std::vector of length 0, capacity 0, fileName=...) at /panda_src/runtime_core/static_core/panda/panda.cpp:145
-
-# [2025-09-12T08:27:43.405Z] #31 ark::Main (argc=<optimized out>, argv=<optimized out>) at /panda_src/runtime_core/static_core/panda/panda.cpp:233
-
-# [2025-09-12T08:27:43.405Z] #32 0x00007ff37cdd2d90 in ?? () from /lib/x86_64-linux-gnu/libc.so.6
-
-# [2025-09-12T08:27:43.405Z] #33 0x00007ff37cdd2e40 in __libc_start_main () from /lib/x86_64-linux-gnu/libc.so.6
-
-# [2025-09-12T08:27:43.405Z] #34 0x0000000100016555 in _start ()
+    # Display results
+    echo "All tasks completed"
+    for i in "${!exit_codes[@]}"; do
+        echo "Task $((i+1)) exit code: ${exit_codes[i]}"
+    done
+fi
