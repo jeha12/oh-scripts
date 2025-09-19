@@ -9,9 +9,15 @@ ninja_build=false
 keep_logs=false
 debug=false
 device=false
+generate=false
 flaky=""
 build_dir=""
+prefix=""
+intermediate_dir=""
+compiler_regex=""
 tests=()
+
+special_case=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -45,6 +51,22 @@ while [[ $# -gt 0 ]]; do
             ;;
         -t|--test)
             tests+=("$2")
+            shift
+            ;;
+        -I|--intermediate-dir)
+            intermediate_dir="$2"
+            shift
+            ;;
+        -C|--compiler-regex)
+            compiler_regex="$2"
+            shift
+            ;;
+        -g|--generate)
+            generate=true
+            shift
+            ;;
+        -S|--case)
+            special_case="$2"
             shift
             ;;
         --) # end of options
@@ -85,7 +107,11 @@ fi
 
 # set -e
 
-mkdir -p ${WORK_DIR}/intermediate
+if [[ ! -n $intermediate_dir ]]; then
+    intermediate_dir=${WORK_DIR}/intermediate
+fi
+mkdir -p ${WORK_DIR}
+mkdir -p ${intermediate_dir}
 
 
 function run_flaky() {
@@ -127,6 +153,7 @@ function run_ark() {
     aot_options=(
         --compiler-inline-external-methods-aot=true
         --compiler-inlining-blacklist=$1
+        --compiler-emit-debug-info=true
     )
     if [ $compiler_log == true ]; then
         aot_options+=(
@@ -134,9 +161,58 @@ function run_ark() {
             --compiler-log=inlining     
         )
     fi
+    if [[ $debug == true ]]; then
+        ir_dump_dir=${intermediate_dir}/${test}_ir_dump
+        rm -r ${ir_dump_dir}/*.ir
+        aot_options+=(
+            --compiler-dump:folder=${intermediate_dir}/${test}_ir_dump
+        )
+    fi
+    if [[ -n $compiler_regex ]]; then
+        aot_options+=(
+            --compiler-regex=$compiler_regex
+        )
+    fi
+
+    aot_options+=(
+        --compiler-aot-ra=false
+        --compiler-balance-expressions=false
+        --compiler-branch-elimination=false
+        --compiler-checks-elimination=false
+        --compiler-deoptimize-elimination=false
+        --compiler-if-conversion=false
+        --compiler-if-merging=false
+        --compiler-interop-intrinsic-optimization=false
+        --compiler-licm=false
+        --compiler-licm-conditions=false
+        --compiler-loop-idioms=false
+        --compiler-loop-peeling=false
+        --compiler-loop-unroll=false
+        --compiler-loop-unswitch=false
+        --compiler-lse=false
+        --compiler-memory-coalescing=false
+        --compiler-move-constants=false
+        --compiler-peepholes=false
+        --compiler-redundant-loop-elimination=false
+        --compiler-reserve-string-builder-buffer=false
+        --compiler-scalar-replacement=false
+        --compiler-simplify-string-builder=false
+        --compiler-spill-fill-pair=false
+        --compiler-unroll-unknown-trip-count=false
+        --compiler-unroll-with-side-exits=false
+        --compiler-vn=false
+    )
+
+
     ${BUILD_DIR}/bin/ark_aot --gc-type=g1-gc --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post --full-gc-bombing-frequency=0 --compiler-check-final=true --compiler-ignore-failures=false \
         "${aot_options[@]}" \
-        --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --paoc-panda-files ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc --paoc-output ${BUILD_DIR}/es2p/intermediate/${test}.ets.an
+        --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --paoc-panda-files ${intermediate_dir}/${test}.ets.abc --paoc-output ${intermediate_dir}/${test}.ets.an
+
+    if [[ $debug == true ]]; then
+        ${BUILD_DIR}/bin/ark_disasm --verbose ${intermediate_dir}/${test}.ets.abc ${intermediate_dir}/${test}.ets.abc.asm
+        ${BUILD_DIR}/bin/ark_aotdump ${intermediate_dir}/${test}.ets.an &> ${intermediate_dir}/${test}.ets.an.dump
+    fi
+
     echo "Run ark:"
     ark_command=(
         ${BUILD_DIR}/bin/ark
@@ -147,18 +223,18 @@ function run_ark() {
         --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc
         --load-runtimes=ets
         --verification-mode=ahead-of-time
-        # --log-debug=all
         --aot-files
-        ${BUILD_DIR}/es2p/intermediate/${test}.ets.an
+        ${intermediate_dir}/${test}.ets.an
         --compiler-enable-jit=false
-        --panda-files=${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
-        ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+        --panda-files=${intermediate_dir}/${test}.ets.abc
+        ${intermediate_dir}/${test}.ets.abc
         ${test}.ETSGLOBAL::main
     )
     if [[ -n $flaky ]]; then
         run_flaky $flaky_i $flaky_j "${ark_command[@]}"
     else
         "${ark_command[@]}"
+        echo "Exit: $?"
     fi
     [[ $debug == true ]] && echo "${ark_command[@]}"
 }
@@ -166,6 +242,74 @@ function run_ark() {
 function direct_test() {
 
     inlined_ext_funcs=()
+
+    if [[ $special_case == "fill0_pass" ]] || [[ $special_case == "fill0_fail" ]]; then
+        inlined_ext_funcs=(
+            "escompat.ArrayBuffer::<ctor>"
+            "escompat.ArrayBuffer::doBoundaryCheck"
+            "escompat.ArrayBuffer::set"
+            # "escompat.Array::<ctor>"
+            "escompat.Array::ensureUnusedCapacity"
+            "escompat.Array::<get>length"
+            "escompat.Array::pushOne"
+            "escompat.Array::toString"
+            "escompat.Buffer::<ctor>"
+            "escompat.DataView::<get>byteLength"
+            "escompat.DataView::getUint8"
+            "escompat.DataView::getUint8Big"
+            "escompat.ETSGLOBAL::isNaN"
+            "escompat.IteratorResult::<ctor>"
+            "escompat.Uint8ClampedArray::clamp"
+            "escompat.Uint8ClampedArray::<ctor>"
+            "escompat.Uint8ClampedArray::<get>length"
+            "escompat.Uint8ClampedArray::set"
+            "escompat.Uint8ClampedArray::setUnsafe"
+            "escompat.Uint8ClampedArray::setUnsafeClamp"
+            "std.core.ArrayValue::getLength"
+            "std.core.ClassType::equals"
+            "std.core.ClassType::getMethod"
+            "std.core.ClassType::getMethodsNum"
+            "std.core.Console::addToBuffer"
+            "std.core.Console::<get>indent"
+            "std.core.Console::log"
+            "std.core.Console::print"
+            "std.core.Console::println"
+            "std.core.Double::compare"
+            "std.core.Double::<ctor>"
+            "std.core.Double::toDouble"
+            "std.core.ETSGLOBAL::getBootRuntimeLinker"
+            "std.core.Float::<ctor>"
+            "std.core.Floating::<ctor>"
+            "std.core.Float::toFloat"
+            "std.core.Float::unboxed"
+            "std.core.Int::<ctor>"
+            "std.core.Integral::<ctor>"
+            "std.core.Int::toInt"
+            "std.core.Int::toString"
+            "std.core.Lambda0::<ctor>"
+            "std.core.LogLevel::valueOf"
+            "std.core.Method::getName"
+            "std.core.Method::getType"
+            "std.core.Method::isStatic"
+            "std.core.Numeric::<ctor>"
+            "std.core.Object::<ctor>"
+            "std.core.Runtime::sameFloatValue"
+            "std.core.Runtime::sameNumberValue"
+            "std.core.Runtime::sameValue"
+            "std.core.StringBuilder::<ctor>"
+            "std.core.TypeAPI::getClassDescriptor"
+            "std.core.TypeAPI::getTypeDescriptor"
+            "std.core.Type::of"
+            "std.testing.arktest::assertCommon"
+            "std.testing.arktest::assertEQ"
+            "std.testing.arktest::assertTrue"
+        )
+        if [[ $special_case == "fill0_pass" ]]; then
+            inlined_ext_funcs+=(
+                "escompat.Array::<ctor>"
+            )
+        fi
+    fi
 
     test=$1
 
@@ -177,14 +321,16 @@ function direct_test() {
         --gen-stdlib=false
         --extension=ets
         --opt-level=2
-        --output=${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+        --output=${intermediate_dir}/${test}.ets.abc
         ${BUILD_DIR}/es2p/gen/${test}.ets
+
+        --debug-info=true
     )
     [[ $debug == true ]] && echo "${es2panda_command[@]}"
-    "${es2panda_command[@]}"
+    "${es2panda_command[@]}" || return $?
 
     echo "Run verifier:"
-    ${BUILD_DIR}/bin/verifier --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --config-file=${STATIC_ROOT_DIR}/tests/tests-u-runner/runner/plugins/ets/ets-verifier.config ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+    ${BUILD_DIR}/bin/verifier --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --config-file=${STATIC_ROOT_DIR}/tests/tests-u-runner/runner/plugins/ets/ets-verifier.config ${intermediate_dir}/${test}.ets.abc
 
     blacklist=$(IFS=,; echo "${inlined_ext_funcs[*]}")
 
@@ -238,15 +384,26 @@ function es2p() {
 
 if [ "$ninja_build" = true ]; then
     cd ${BUILD_DIR}
-    ninja -j4 ark ark_aot es2panda
+    ninja -j4 ark ark_aot es2panda ets-compile-stdlib-default
     cd -
+
+    # cd ${BUILD_DIR}/plugins/ets && ${BUILD_DIR}/bin/es2panda_stdlib_compiler --opt-level=2 --thread=0 --extension=ets --output=${BUILD_DIR}/plugins/ets/etsstdlib.abc --gen-stdlib=true --generate-decl:enabled,path=${BUILD_DIR}/plugins/ets/stdlib/decls --arktsconfig=${STATIC_ROOT_DIR}/plugins/ets/stdlib/stdconfig.json --debug-info=true
+    # ${STATIC_ROOT_DIR}/plugins/ets/compiler/tools/paoc_compile_stdlib.sh --prefix="" --binary-dir=${BUILD_DIR} -compiler-options="--compiler-check-final=true --compiler-emit-debug-info=true" -paoc-output=${BUILD_DIR}/plugins/ets/etsstdlib.an
+
 fi
 
-# # test=${tests[0]}
-# export RETRIES_IN_STRICT_MODE=4
-# es2p
-
-# exit 0
+if [[ $generate == true ]]; then
+    for test in ${tests[@]}; do
+        test_yaml="${test%%_*}"
+        test_name=$(echo "$test" | sed 's/[0-9]*$//')
+        ${STATIC_ROOT_DIR}/tests/tests-u-runner/tools/generate-es-checked/main.rb \
+            --out ${BUILD_DIR}/es2p/gen \
+            --tmp ${BUILD_DIR}/es2p/tmp \
+            --ts-node=npx:--prefix:${STATIC_ROOT_DIR}/tests/tests-u-runner/tools/generate-es-checked:ts-node:-P:${STATIC_ROOT_DIR}/tests/tests-u-runner/tools/generate-es-checked/tsconfig.json \
+            --filter "^${test_name}$" \
+            ${STATIC_ROOT_DIR}/plugins/ets/tests/ets_es_checked/${test_yaml}.yaml
+    done
+fi
 
 if [[ $device == true ]]; then
 
@@ -291,7 +448,7 @@ es2panda_command=(
     --gen-stdlib=false
     --extension=ets
     --opt-level=2
-    --output=${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+    --output=${intermediate_dir}/${test}.ets.abc
     ${BUILD_DIR}/es2p/gen/${test}.ets
 )
 "${es2panda_command[@]}"
@@ -307,9 +464,9 @@ ark_aot_command=(
     --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc
     --load-runtimes=ets
     --paoc-panda-files
-    ${BUILD_DIR}/es2p/intermediate/${test}.ets.abc
+    ${intermediate_dir}/${test}.ets.abc
     --paoc-output
-    ${BUILD_DIR}/es2p/intermediate/${test}.ets.an
+    ${intermediate_dir}/${test}.ets.an
 )
 "${ark_aot_command[@]}"
 
@@ -317,7 +474,7 @@ if ! lock_device; then
     exit
 fi
 
-TEMP_DIR=${BUILD_DIR}/es2p/intermediate
+TEMP_DIR=${intermediate_dir}
 TEST=${test}.ets
 
 HDC_SEND $TEMP_DIR/$TEST.abc $DEV_HOME/$TEST.abc
