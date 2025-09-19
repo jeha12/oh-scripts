@@ -1,5 +1,9 @@
-# export ROOT_DIR=/media/share/panda/panda2
-export STATIC_ROOT_DIR=${ROOT_DIR}/runtime_core/static_core
+if [[ ! -d $STATIC_ROOT_DIR ]]; then
+    echo "Error: Invalid STATIC_ROOT_DIR specified" >&2
+    exit 1
+fi
+
+export ROOT_DIR=${STATIC_ROOT_DIR}/../..
 
 
 export NODE_TLS_REJECT_UNAUTHORIZED=0
