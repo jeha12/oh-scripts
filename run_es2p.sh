@@ -12,14 +12,17 @@ compiler_log=false
 ninja_build=false
 keep_logs=false
 debug=false
+debug_dump=false
 device=false
 generate=false
+run_only=false
 flaky=""
 build_dir=""
 prefix=""
 intermediate_dir=""
 compiler_regex=""
 tests=()
+processes=6
 
 special_case=""
 
@@ -45,12 +48,24 @@ while [[ $# -gt 0 ]]; do
             debug=true
             shift
             ;;
+        --debug-dump)
+            debug_dump=true
+            shift
+            ;;  
         -D|--device)
             device=true
             shift
             ;;
+        -r|--run-only)
+            run_only=true
+            shift
+            ;;
         -f|--flaky)
             flaky="$2"
+            shift
+            ;;
+        -j|--processes)
+            processes="$2"
             shift
             ;;
         -t|--test)
@@ -153,7 +168,6 @@ function run_flaky() {
 }
 
 function run_ark() {
-    echo "Run ark_aot:"
     aot_options=(
         --compiler-inline-external-methods-aot=true
         --compiler-inlining-blacklist=$1
@@ -165,56 +179,70 @@ function run_ark() {
             --compiler-log=inlining     
         )
     fi
-    if [[ $debug == true ]]; then
+    if [[ -n $compiler_regex ]]; then
         ir_dump_dir=${intermediate_dir}/${test}_ir_dump
         rm -r ${ir_dump_dir}/*.ir
         aot_options+=(
             --compiler-dump:folder=${intermediate_dir}/${test}_ir_dump
-        )
-    fi
-    if [[ -n $compiler_regex ]]; then
-        aot_options+=(
             --compiler-regex=$compiler_regex
         )
     fi
 
-    aot_options+=(
-        --compiler-aot-ra=false
-        --compiler-balance-expressions=false
-        --compiler-branch-elimination=false
-        --compiler-checks-elimination=false
-        --compiler-deoptimize-elimination=false
-        --compiler-if-conversion=false
-        --compiler-if-merging=false
-        --compiler-interop-intrinsic-optimization=false
-        --compiler-licm=false
-        --compiler-licm-conditions=false
-        --compiler-loop-idioms=false
-        --compiler-loop-peeling=false
-        --compiler-loop-unroll=false
-        --compiler-loop-unswitch=false
-        --compiler-lse=false
-        --compiler-memory-coalescing=false
-        --compiler-move-constants=false
-        --compiler-peepholes=false
-        --compiler-redundant-loop-elimination=false
-        --compiler-reserve-string-builder-buffer=false
-        --compiler-scalar-replacement=false
-        --compiler-simplify-string-builder=false
-        --compiler-spill-fill-pair=false
-        --compiler-unroll-unknown-trip-count=false
-        --compiler-unroll-with-side-exits=false
-        --compiler-vn=false
-    )
+    # # Disable passes
+    # aot_options+=(
+    #     --compiler-aot-ra=false
+    #     --compiler-balance-expressions=false
+    #     --compiler-branch-elimination=false
+    #     --compiler-checks-elimination=false
+    #     --compiler-deoptimize-elimination=false
+    #     --compiler-if-conversion=false
+    #     --compiler-if-merging=false
+    #     --compiler-interop-intrinsic-optimization=false
+    #     --compiler-licm=false
+    #     --compiler-licm-conditions=false
+    #     --compiler-loop-idioms=false
+    #     --compiler-loop-peeling=false
+    #     --compiler-loop-unroll=false
+    #     --compiler-loop-unswitch=false
+    #     --compiler-lse=false
+    #     --compiler-memory-coalescing=false
+    #     --compiler-move-constants=false
+    #     --compiler-peepholes=false
+    #     --compiler-redundant-loop-elimination=false
+    #     --compiler-reserve-string-builder-buffer=false
+    #     --compiler-scalar-replacement=false
+    #     --compiler-simplify-string-builder=false
+    #     --compiler-spill-fill-pair=false
+    #     --compiler-unroll-unknown-trip-count=false
+    #     --compiler-unroll-with-side-exits=false
+    #     --compiler-vn=false
+    # )
 
 
-    ${BUILD_DIR}/bin/ark_aot --gc-type=g1-gc --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post --full-gc-bombing-frequency=0 --compiler-check-final=true --compiler-ignore-failures=false \
-        "${aot_options[@]}" \
-        --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc --load-runtimes=ets --paoc-panda-files ${intermediate_dir}/${test}.ets.abc --paoc-output ${intermediate_dir}/${test}.ets.an
-
-    if [[ $debug == true ]]; then
-        ${BUILD_DIR}/bin/ark_disasm --verbose ${intermediate_dir}/${test}.ets.abc ${intermediate_dir}/${test}.ets.abc.asm
-        ${BUILD_DIR}/bin/ark_aotdump ${intermediate_dir}/${test}.ets.an &> ${intermediate_dir}/${test}.ets.an.dump
+    if [[ $run_only == false ]]; then
+        echo "Run ark_aot:"
+        ark_aot_command=(
+            ${BUILD_DIR}/bin/ark_aot
+            --gc-type=g1-gc
+            --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
+            --full-gc-bombing-frequency=0
+            --compiler-check-final=true
+            --compiler-ignore-failures=false
+            "${aot_options[@]}"
+            --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc
+            --load-runtimes=ets
+            --paoc-panda-files
+            ${intermediate_dir}/${test}.ets.abc
+            --paoc-output ${intermediate_dir}/${test}.ets.an
+        )
+        "${ark_aot_command[@]}" || return $?
+        if [[ $debug == true ]]; then
+            echo "${ark_aot_command[@]}"
+            if [[ $debug_dump == true ]]; then
+                ${BUILD_DIR}/bin/ark_disasm --verbose ${intermediate_dir}/${test}.ets.abc ${intermediate_dir}/${test}.ets.abc.asm
+                ${BUILD_DIR}/bin/ark_aotdump ${intermediate_dir}/${test}.ets.an &> ${intermediate_dir}/${test}.ets.an.dump
+            fi
+        fi
     fi
 
     echo "Run ark:"
@@ -240,10 +268,19 @@ function run_ark() {
         "${ark_command[@]}"
         echo "Exit: $?"
     fi
-    [[ $debug == true ]] && echo "${ark_command[@]}"
+    if [[ $debug == true ]]; then
+        echo "${ark_command[@]}"
+    fi
 }
 
 function direct_test() {
+
+    test=$1
+
+    if [[ $run_only == true ]]; then
+        run_ark
+        return
+    fi
 
     inlined_ext_funcs=()
 
@@ -315,8 +352,6 @@ function direct_test() {
         fi
     fi
 
-    test=$1
-
     echo "${test}.ets:"
     echo "Run es2panda:"
     es2panda_command=(
@@ -327,10 +362,13 @@ function direct_test() {
         --opt-level=2
         --output=${intermediate_dir}/${test}.ets.abc
         ${BUILD_DIR}/es2p/gen/${test}.ets
-
-        --debug-info=true
     )
-    [[ $debug == true ]] && echo "${es2panda_command[@]}"
+    if [[ $debug == true ]]; then
+        echo "${es2panda_command[@]}"
+        es2panda_command+=(
+            --debug-info=true
+        )
+    fi
     "${es2panda_command[@]}" || return $?
 
     echo "Run verifier:"
@@ -346,7 +384,7 @@ function es2p_runner() {
         ${STATIC_ROOT_DIR}/tests/tests-u-runner/runner.sh
         --ets-es-checked
         --build-dir="${BUILD_DIR}"
-        --processes=16
+        --processes=${processes}
         --work-dir=${BUILD_DIR}/es2p${RUN_ITER}
         --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
         --gdb-timeout=5
@@ -381,14 +419,14 @@ function es2p() {
         --aot-args='--compiler-ignore-failures=false'
         --ark-args='--enable-an:force'
         --work-dir ${BUILD_DIR}/es2p${RUN_ITER}
-        --processes=16
+        --processes=${processes}
     )
     "${command[@]}"
 }
 
 if [ "$ninja_build" = true ]; then
     cd ${BUILD_DIR}
-    ninja -j4 ark ark_aot es2panda ets-compile-stdlib-default
+    ninja -j${processes} ark ark_aot es2panda ets-compile-stdlib-default
     cd -
 
     # cd ${BUILD_DIR}/plugins/ets && ${BUILD_DIR}/bin/es2panda_stdlib_compiler --opt-level=2 --thread=0 --extension=ets --output=${BUILD_DIR}/plugins/ets/etsstdlib.abc --gen-stdlib=true --generate-decl:enabled,path=${BUILD_DIR}/plugins/ets/stdlib/decls --arktsconfig=${STATIC_ROOT_DIR}/plugins/ets/stdlib/stdconfig.json --debug-info=true
@@ -411,96 +449,96 @@ fi
 
 if [[ $device == true ]]; then
 
-function HDC() {
-    hdc -s ${HDC_SERVER_IP_PORT} -t ${HDC_DEVICE_SERIAL} ${@}
-}
-function HDC_SEND() {
-    hdc -s ${HDC_SERVER_IP_PORT} -t ${HDC_DEVICE_SERIAL} file send ${@}
-}
+    function HDC() {
+        hdc -s ${HDC_SERVER_IP_PORT} -t ${HDC_DEVICE_SERIAL} ${@}
+    }
+    function HDC_SEND() {
+        hdc -s ${HDC_SERVER_IP_PORT} -t ${HDC_DEVICE_SERIAL} file send ${@}
+    }
 
-lock_device()
-{
-    if [[ `HDC shell file $MUTEX` == *"cannot"* ]]; then
-        echo Device is free - locking...
-        HDC shell "echo $USER > $MUTEX"
-        return 0
-    else
-        echo Device is busy by `HDC shell cat $MUTEX` ...
-        return 1
-    fi        
-}
- 
-release_device()
-{
-    echo Release device
-    HDC shell rm $MUTEX
-}
+    lock_device()
+    {
+        if [[ `HDC shell file $MUTEX` == *"cannot"* ]]; then
+            echo Device is free - locking...
+            HDC shell "echo $USER > $MUTEX"
+            return 0
+        else
+            echo Device is busy by `HDC shell cat $MUTEX` ...
+            return 1
+        fi        
+    }
+    
+    release_device()
+    {
+        echo Release device
+        HDC shell rm $MUTEX
+    }
 
-MUTEX=/data/local/tmp/mutex
-MODE=release
+    MUTEX=/data/local/tmp/mutex
+    MODE=release
 
-trap release_device EXIT INT TERM HUP
+    trap release_device EXIT INT TERM HUP
 
 
-test=${tests[0]}
+    test=${tests[0]}
 
-set -e
+    set -e
 
-es2panda_command=(
-    ${BUILD_DIR}/bin/es2panda
-    --arktsconfig=${BUILD_DIR}/tools/es2panda/generated/arktsconfig.json
-    --gen-stdlib=false
-    --extension=ets
-    --opt-level=2
-    --output=${intermediate_dir}/${test}.ets.abc
-    ${BUILD_DIR}/es2p/gen/${test}.ets
-)
-"${es2panda_command[@]}"
+    es2panda_command=(
+        ${BUILD_DIR}/bin/es2panda
+        --arktsconfig=${BUILD_DIR}/tools/es2panda/generated/arktsconfig.json
+        --gen-stdlib=false
+        --extension=ets
+        --opt-level=2
+        --output=${intermediate_dir}/${test}.ets.abc
+        ${BUILD_DIR}/es2p/gen/${test}.ets
+    )
+    "${es2panda_command[@]}"
 
-ark_aot_command=(
-    ${BUILD_DIR}/bin/ark_aot
-    --gc-type=g1-gc
-    --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
-    --full-gc-bombing-frequency=0
-    --compiler-check-final=true
-    --compiler-ignore-failures=false
-    "${aot_options[@]}"
-    --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc
-    --load-runtimes=ets
-    --paoc-panda-files
-    ${intermediate_dir}/${test}.ets.abc
-    --paoc-output
-    ${intermediate_dir}/${test}.ets.an
-)
-"${ark_aot_command[@]}"
+    ark_aot_command=(
+        ${BUILD_DIR}/bin/ark_aot
+        --gc-type=g1-gc
+        --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
+        --full-gc-bombing-frequency=0
+        --compiler-check-final=true
+        --compiler-ignore-failures=false
+        "${aot_options[@]}"
+        --boot-panda-files=${BUILD_DIR}/plugins/ets/etsstdlib.abc
+        --load-runtimes=ets
+        --paoc-panda-files
+        ${intermediate_dir}/${test}.ets.abc
+        --paoc-output
+        ${intermediate_dir}/${test}.ets.an
+    )
+    "${ark_aot_command[@]}"
 
-if ! lock_device; then
-    exit
-fi
+    if ! lock_device; then
+        exit
+    fi
 
-TEMP_DIR=${intermediate_dir}
-TEST=${test}.ets
+    TEMP_DIR=${intermediate_dir}
+    TEST=${test}.ets
 
-HDC_SEND $TEMP_DIR/$TEST.abc $DEV_HOME/$TEST.abc
-HDC_SEND $TEMP_DIR/$TEST.an $DEV_HOME/$TEST.an 
+    HDC_SEND $TEMP_DIR/$TEST.abc $DEV_HOME/$TEST.abc
+    HDC_SEND $TEMP_DIR/$TEST.an $DEV_HOME/$TEST.an 
 
-ark_command=(
-    --enable-an:force
-    --gc-type=g1-gc
-    --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
-    --full-gc-bombing-frequency=0
-    --boot-panda-files=$DEV_HOME/etsstdlib.abc
-    --load-runtimes=ets
-    --verification-mode=ahead-of-time
-    --aot-files=$DEV_HOME/$TEST.an
-    --compiler-enable-jit=false
-    --panda-files=$DEV_HOME/$TEST.abc
-    $DEV_HOME/$TEST.abc
-    ${test}.ETSGLOBAL::main
-)
-HDC shell "(hilog -r) && \time -v /system/bin/taskset -a 3F0 env LD_LIBRARY_PATH=$DEV_HOME/lib $DEV_HOME/ark ${ark_command[@]}"
+    ark_command=(
+        --enable-an:force
+        --gc-type=g1-gc
+        --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
+        --full-gc-bombing-frequency=0
+        --boot-panda-files=$DEV_HOME/etsstdlib.abc
+        --load-runtimes=ets
+        --verification-mode=ahead-of-time
+        --aot-files=$DEV_HOME/$TEST.an
+        --compiler-enable-jit=false
+        --panda-files=$DEV_HOME/$TEST.abc
+        $DEV_HOME/$TEST.abc
+        ${test}.ETSGLOBAL::main
+    )
+    HDC shell "(hilog -r) && \time -v /system/bin/taskset -a 3F0 env LD_LIBRARY_PATH=$DEV_HOME/lib $DEV_HOME/ark ${ark_command[@]}"
 
-release_device
+    release_device
 
 elif [ ${#tests[@]} -eq 0 ]; then
     es2p
