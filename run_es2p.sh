@@ -185,39 +185,11 @@ function run_ark() {
         aot_options+=(
             --compiler-dump:folder=${intermediate_dir}/${test}_ir_dump
             --compiler-regex=$compiler_regex
+            --compiler-disasm-dump
+            --compiler-disasm-dump:single-file=true
+            --compiler-disasm-dump:file-name=${intermediate_dir}/${test}_disasm.txt
         )
     fi
-
-    # # Disable passes
-    # aot_options+=(
-    #     --compiler-aot-ra=false
-    #     --compiler-balance-expressions=false
-    #     --compiler-branch-elimination=false
-    #     --compiler-checks-elimination=false
-    #     --compiler-deoptimize-elimination=false
-    #     --compiler-if-conversion=false
-    #     --compiler-if-merging=false
-    #     --compiler-interop-intrinsic-optimization=false
-    #     --compiler-licm=false
-    #     --compiler-licm-conditions=false
-    #     --compiler-loop-idioms=false
-    #     --compiler-loop-peeling=false
-    #     --compiler-loop-unroll=false
-    #     --compiler-loop-unswitch=false
-    #     --compiler-lse=false
-    #     --compiler-memory-coalescing=false
-    #     --compiler-move-constants=false
-    #     --compiler-peepholes=false
-    #     --compiler-redundant-loop-elimination=false
-    #     --compiler-reserve-string-builder-buffer=false
-    #     --compiler-scalar-replacement=false
-    #     --compiler-simplify-string-builder=false
-    #     --compiler-spill-fill-pair=false
-    #     --compiler-unroll-unknown-trip-count=false
-    #     --compiler-unroll-with-side-exits=false
-    #     --compiler-vn=false
-    # )
-
 
     if [[ $run_only == false ]]; then
         echo "Run ark_aot:"
@@ -248,6 +220,9 @@ function run_ark() {
     echo "Run ark:"
     ark_command=(
         ${BUILD_DIR}/bin/ark
+        --log-file=${intermediate_dir}/${test}_ark.log
+        --log-stream=file
+        --log-debug=AOT
         --enable-an:force
         --gc-type=g1-gc
         --heap-verifier=fail_on_verification:pre:into:before_g1_concurrent:post
@@ -283,74 +258,6 @@ function direct_test() {
     fi
 
     inlined_ext_funcs=()
-
-    if [[ $special_case == "fill0_pass" ]] || [[ $special_case == "fill0_fail" ]]; then
-        inlined_ext_funcs=(
-            "escompat.ArrayBuffer::<ctor>"
-            "escompat.ArrayBuffer::doBoundaryCheck"
-            "escompat.ArrayBuffer::set"
-            # "escompat.Array::<ctor>"
-            "escompat.Array::ensureUnusedCapacity"
-            "escompat.Array::<get>length"
-            "escompat.Array::pushOne"
-            "escompat.Array::toString"
-            "escompat.Buffer::<ctor>"
-            "escompat.DataView::<get>byteLength"
-            "escompat.DataView::getUint8"
-            "escompat.DataView::getUint8Big"
-            "escompat.ETSGLOBAL::isNaN"
-            "escompat.IteratorResult::<ctor>"
-            "escompat.Uint8ClampedArray::clamp"
-            "escompat.Uint8ClampedArray::<ctor>"
-            "escompat.Uint8ClampedArray::<get>length"
-            "escompat.Uint8ClampedArray::set"
-            "escompat.Uint8ClampedArray::setUnsafe"
-            "escompat.Uint8ClampedArray::setUnsafeClamp"
-            "std.core.ArrayValue::getLength"
-            "std.core.ClassType::equals"
-            "std.core.ClassType::getMethod"
-            "std.core.ClassType::getMethodsNum"
-            "std.core.Console::addToBuffer"
-            "std.core.Console::<get>indent"
-            "std.core.Console::log"
-            "std.core.Console::print"
-            "std.core.Console::println"
-            "std.core.Double::compare"
-            "std.core.Double::<ctor>"
-            "std.core.Double::toDouble"
-            "std.core.ETSGLOBAL::getBootRuntimeLinker"
-            "std.core.Float::<ctor>"
-            "std.core.Floating::<ctor>"
-            "std.core.Float::toFloat"
-            "std.core.Float::unboxed"
-            "std.core.Int::<ctor>"
-            "std.core.Integral::<ctor>"
-            "std.core.Int::toInt"
-            "std.core.Int::toString"
-            "std.core.Lambda0::<ctor>"
-            "std.core.LogLevel::valueOf"
-            "std.core.Method::getName"
-            "std.core.Method::getType"
-            "std.core.Method::isStatic"
-            "std.core.Numeric::<ctor>"
-            "std.core.Object::<ctor>"
-            "std.core.Runtime::sameFloatValue"
-            "std.core.Runtime::sameNumberValue"
-            "std.core.Runtime::sameValue"
-            "std.core.StringBuilder::<ctor>"
-            "std.core.TypeAPI::getClassDescriptor"
-            "std.core.TypeAPI::getTypeDescriptor"
-            "std.core.Type::of"
-            "std.testing.arktest::assertCommon"
-            "std.testing.arktest::assertEQ"
-            "std.testing.arktest::assertTrue"
-        )
-        if [[ $special_case == "fill0_pass" ]]; then
-            inlined_ext_funcs+=(
-                "escompat.Array::<ctor>"
-            )
-        fi
-    fi
 
     echo "${test}.ets:"
     echo "Run es2panda:"
