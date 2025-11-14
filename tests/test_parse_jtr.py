@@ -53,6 +53,15 @@ class CommandSplitTests(unittest.TestCase):
         self.assertEqual(len(commands), 1)
         self.assertEqual(commands[0].get_command_name(), "c2abc")
 
+    def test_env_assignment_propagates_across_split(self):
+        command_line = "V=1 ./cmd1 -a ; ./cmd2 -b"
+        commands = build_commands_from_command_line(command_line, "sec", {}, None)
+        self.assertEqual(len(commands), 2)
+        self.assertEqual(commands[0].command, "V=1 ./cmd1 -a")
+        self.assertEqual(commands[1].command, "V=1 ./cmd2 -b")
+        self.assertEqual(commands[0].get_command_name(), "cmd1")
+        self.assertEqual(commands[1].get_command_name(), "cmd2")
+
 
 if __name__ == "__main__":
     unittest.main()

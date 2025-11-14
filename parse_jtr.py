@@ -40,6 +40,16 @@ def _strip_leading_env(tokens: List[str]) -> List[str]:
     return stripped
 
 
+def _leading_env_assignments(tokens: List[str]) -> List[str]:
+    prefix = []
+    for token in tokens:
+        if _is_env_assignment(token):
+            prefix.append(token)
+        else:
+            break
+    return prefix
+
+
 def _strip_shell_wrapper(tokens: List[str]) -> List[str]:
     tokens = list(tokens)
     tokens = _strip_leading_env(tokens)
@@ -128,15 +138,22 @@ def build_commands_from_command_line(command_line: str, section: str,
     """Split a command line into separate Command objects for each real command."""
     commands = []
     tokenized_commands = _split_command_line(command_line)
+    env_prefix = _leading_env_assignments(tokenized_commands[0]) if tokenized_commands else []
 
     for cmd_tokens in tokenized_commands:
-        real_token = _find_real_command_token(cmd_tokens)
+        cmd_tokens_with_env = list(cmd_tokens)
+        if env_prefix and not cmd_tokens_with_env:
+            continue
+        if env_prefix and not _is_env_assignment(cmd_tokens_with_env[0]):
+            cmd_tokens_with_env = env_prefix + cmd_tokens_with_env
+
+        real_token = _find_real_command_token(cmd_tokens_with_env)
         if not real_token:
             continue
         if os.path.basename(real_token).lower() == 'echo':
             continue
 
-        command_text = ' '.join(cmd_tokens).strip()
+        command_text = ' '.join(cmd_tokens_with_env).strip()
         commands.append(
             Command(
                 section=section,
