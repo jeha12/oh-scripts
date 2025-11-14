@@ -8,6 +8,164 @@ import shlex
 import json
 
 
+SHELL_NAMES = {"bash", "sh"}
+SHELL_SEPARATORS = {";", "&&", "||"}
+ENV_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+
+
+def _tokenize_shell_command(command_str: str) -> List[str]:
+    """Tokenize a shell-like command string respecting quotes and separators."""
+    if not command_str:
+        return []
+
+    lexer = shlex.shlex(command_str, posix=True, punctuation_chars=';&|')
+    lexer.whitespace_split = True
+    lexer.commenters = ''
+    return list(lexer)
+
+
+def _is_shell_token(token: str) -> bool:
+    base = os.path.basename(token)
+    return base in SHELL_NAMES
+
+
+def _is_env_assignment(token: str) -> bool:
+    return bool(ENV_ASSIGNMENT_RE.match(token))
+
+
+def _strip_leading_env(tokens: List[str]) -> List[str]:
+    stripped = list(tokens)
+    while stripped and _is_env_assignment(stripped[0]):
+        stripped.pop(0)
+    return stripped
+
+
+def _leading_env_assignments(tokens: List[str]) -> List[str]:
+    prefix = []
+    for token in tokens:
+        if _is_env_assignment(token):
+            prefix.append(token)
+        else:
+            break
+    return prefix
+
+
+def _strip_shell_wrapper(tokens: List[str]) -> List[str]:
+    tokens = list(tokens)
+    tokens = _strip_leading_env(tokens)
+    if not tokens:
+        return []
+
+    if _is_shell_token(tokens[0]):
+        tokens = tokens[1:]
+        while tokens and tokens[0].startswith('-'):
+            tokens.pop(0)
+        remainder = ' '.join(tokens).strip()
+        if not remainder:
+            return []
+        return _tokenize_shell_command(remainder)
+
+    return tokens
+
+
+def _find_real_command_token(tokens: List[str]) -> Optional[str]:
+    tokens = _strip_leading_env(tokens)
+    if not tokens:
+        return None
+
+    if _is_shell_token(tokens[0]):
+        return _find_real_command_token(_strip_shell_wrapper(tokens))
+
+    if tokens[0].lower() == 'echo':
+        return None
+
+    return tokens[0]
+
+
+def _expand_wrapped_command(tokens: List[str]) -> List[List[str]]:
+    """Expand shell wrappers (bash/sh) and return actual command token lists."""
+    remaining = list(tokens)
+    env_prefix = []
+    while remaining and _is_env_assignment(remaining[0]):
+        env_prefix.append(remaining.pop(0))
+
+    if not remaining:
+        return []
+
+    if _is_shell_token(remaining[0]):
+        remaining.pop(0)
+        while remaining and remaining[0].startswith('-'):
+            remaining.pop(0)
+        remainder = ' '.join(remaining).strip()
+        if not remainder:
+            return []
+        inner_tokens = _tokenize_shell_command(remainder)
+        inner_commands = _split_tokens_into_commands(inner_tokens)
+        expanded = []
+        for inner in inner_commands:
+            if inner:
+                expanded.append(env_prefix + inner)
+        return expanded
+
+    return [env_prefix + remaining]
+
+
+def _split_tokens_into_commands(tokens: List[str]) -> List[List[str]]:
+    commands = []
+    current = []
+    for token in tokens:
+        if token in SHELL_SEPARATORS:
+            if current:
+                commands.extend(_expand_wrapped_command(current))
+                current = []
+        else:
+            current.append(token)
+
+    if current:
+        commands.extend(_expand_wrapped_command(current))
+
+    return [cmd for cmd in commands if cmd]
+
+
+def _split_command_line(command_line: str) -> List[List[str]]:
+    tokens = _tokenize_shell_command(command_line)
+    return _split_tokens_into_commands(tokens)
+
+
+def build_commands_from_command_line(command_line: str, section: str,
+                                     env_vars: Dict[str, str],
+                                     directory: Optional[str]) -> List['Command']:
+    """Split a command line into separate Command objects for each real command."""
+    commands = []
+    tokenized_commands = _split_command_line(command_line)
+    env_prefix = _leading_env_assignments(tokenized_commands[0]) if tokenized_commands else []
+
+    for cmd_tokens in tokenized_commands:
+        cmd_tokens_with_env = list(cmd_tokens)
+        if env_prefix and not cmd_tokens_with_env:
+            continue
+        if env_prefix and not _is_env_assignment(cmd_tokens_with_env[0]):
+            cmd_tokens_with_env = env_prefix + cmd_tokens_with_env
+
+        real_token = _find_real_command_token(cmd_tokens_with_env)
+        if not real_token:
+            continue
+        if os.path.basename(real_token).lower() == 'echo':
+            continue
+
+        command_text = ' '.join(cmd_tokens_with_env).strip()
+        commands.append(
+            Command(
+                section=section,
+                command=command_text,
+                env_vars=dict(env_vars),
+                directory=directory
+            )
+        )
+
+    return commands
+
+
 class Command:
     """Class representing a parsed command from test runner output"""
     
@@ -77,15 +235,26 @@ class Command:
         return self._last_result is not None and self._last_result[0] == 0
     
     def get_command_name(self) -> str:
-        """Extract command name from command string (e.g., 'ark' from '/path/to/ark')"""
-        # Split command by spaces to get the first part (the actual command)
-        cmd_parts = self.command.strip().split()
-        if not cmd_parts:
+        """Extract a representative command name, unwrapping shell helpers."""
+        command_str = self.command.strip()
+        if not command_str:
             return ""
-        
-        # Get the first part (command path) and extract the last component
-        command_path = cmd_parts[0]
-        return command_path.split('/')[-1] if '/' in command_path else command_path
+
+        tokens = _tokenize_shell_command(command_str)
+        real_token = _find_real_command_token(tokens)
+
+        def _format_name(token: str) -> str:
+            if '/' in token:
+                return token.split('/')[-1]
+            return token
+
+        if real_token:
+            return _format_name(real_token)
+
+        fallback_parts = command_str.split()
+        if not fallback_parts:
+            return ""
+        return _format_name(fallback_parts[0])
     
     def to_bash_string(self) -> str:
         """Generate bash command string"""
@@ -320,8 +489,8 @@ def parse_commands(text) -> TestRunner:
         
         elif 'Command is:' in section_content:
             # Parse standard format sections
-            command = parse_standard_format(section_content, section_name)
-            if command:
+            commands = parse_standard_format(section_content, section_name)
+            for command in commands:
                 runner.add_command(command)
     
     return runner
@@ -367,21 +536,25 @@ def parse_rerun_block(rerun_content, section_name) -> Optional[Command]:
     return None
 
 
-def parse_standard_format(section_content, section_name) -> Optional[Command]:
-    """Parse standard format sections with 'Command is:' pattern and return Command object"""
+def parse_standard_format(section_content, section_name) -> List[Command]:
+    """Parse standard format sections and return Command objects."""
     command_str = None
     env_vars = {}
     directory = None
-    
+    command_lines: List[str] = []
+
     lines = section_content.split('\n')
     i = 0
-    
+
     while i < len(lines):
         line = lines[i].strip()
-        
+
+        if line.startswith('command:'):
+            command_lines.append(line.replace('command:', '', 1).strip())
+
         if line.startswith('Command is:'):
             command_str = line.replace('Command is:', '').strip()
-        
+
         elif line == 'Command environment is:':
             # Read environment variables until we hit another section or empty line
             i += 1
@@ -389,26 +562,40 @@ def parse_standard_format(section_content, section_name) -> Optional[Command]:
                 env_line = lines[i].strip()
                 if not env_line or env_line.startswith('Execution directory is:'):
                     break
-                if '=' in env_line:
+                if ENV_ASSIGNMENT_RE.match(env_line):
                     var, value = env_line.split('=', 1)
                     env_vars[var.strip()] = value.strip()
+                else:
+                    break
                 i += 1
             i -= 1  # Adjust for the outer loop increment
-        
+
         elif line.startswith('Execution directory is:'):
             directory = line.replace('Execution directory is:', '').strip()
-        
+
         i += 1
-    
+
+    commands: List[Command] = []
+
     if command_str:
-        return Command(
-            section=section_name,
-            command=command_str,
-            env_vars=env_vars,
-            directory=directory
+        sources = [command_str]
+    else:
+        sources = command_lines
+
+    for source in sources:
+        commands.extend(build_commands_from_command_line(source, section_name, env_vars, directory))
+
+    if not commands and command_str:
+        commands.append(
+            Command(
+                section=section_name,
+                command=command_str,
+                env_vars=env_vars,
+                directory=directory
+            )
         )
-    
-    return None
+
+    return commands
 
 
 def execute_commands_by_names(runner: TestRunner, command_specs: List[Tuple[str, str]], raw_output: bool = False):
