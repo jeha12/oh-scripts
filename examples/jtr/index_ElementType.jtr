@@ -1,0 +1,95 @@
+#Test Results (version 2)
+#Thu Nov 13 12:00:05 UTC 2025
+#-----testdescription-----
+$file=/media/share/panda/jck_local/tests/api/java_lang/annotation/ElementType/index.html
+$root=/media/share/panda/jck_local/tests
+embeddedProfile=1
+executeArgs=-TestCaseID ALL
+executeClass=javasoft.sqe.tests.api.java.lang.annotation.ElementType.ElementTypeTests
+id=ElementType
+keywords=positive runtime
+source=ElementTypeTests.java
+title=ElementType tests
+
+#-----environment-----
+aot=true
+ark.home=/media/share/panda/aosp/out/panda/root_fs/host/debug
+ark.options=--enable-an --load-in-boot
+ark.sysroot=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot
+ark.target.platform=ark_amd64.libcore12
+bin=abc
+command.c2abc.ark_amd64.libcore12=${agent.command} com.huawei.cqa.javatest.lib.ProcessCommandExt -a\:${testsuite.root}$/patterns.properties -v -execDir $precompileDir$/${precompileTestPath} -pass 0 "OK" -error default error LD_LIBRARY_PATH\=/usr/lib\:${ark.home}/lib\:${ark.home}/libcore_lib ${ark.home}/bin/c2abc ${c2abc.options} $testClassDirPrecompile ${className}.${bin}
+command.testExecute.aot.ark_amd64.libcore12=${agent.command} com.huawei.cqa.javatest.lib.ProcessCommandExt -a\:${testsuite.root}$/patterns.properties -v ${th} -execDir $precompileDir$/${precompileTestPath} -pass 0 "OK" -pass 95 "OK" -fail 1 "test failed" -fail 97 "test failed" -error default error LD_LIBRARY_PATH\=/usr/lib\:${ark.home}/lib\:${ark.home}/libcore_lib\:${testsuite.root}/lib/linux-amd64 ANDROID_DATA\=${ark.sysroot}/data ANDROID_TZDATA_ROOT\=${ark.sysroot} ANDROID_I18N_ROOT\=${ark.sysroot} ICU_DATA\=${ark.sysroot}/etc/icu TSAN_OPTIONS\=${ark.tsan.options} bash -ce "${ark.home}$/bin$/ark_aot --boot-panda-files\=${ark.home}/libcore/core-oj.jar\:${ark.home}/libcore/core-libart.jar\:${ark.home}/libcore/okhttp.jar\:${ark.home}/libcore/bouncycastle.jar\:${ark.home}/libcore/conscrypt.jar\:${ark.home}/libcore/apache-xml.jar\:${ark.home}/libcore/core-icu4j.jar\:${precompileDir}/spec/spec.jar --load-runtimes\=java ${ark.options} ${paoc.options} --paoc-panda-files ${className}.${bin} --paoc-output ${className}.aot --compiler-cross-arch ${paoc.arch}; ${ark.home}$/bin$/ark --boot-panda-files\=${ark.home}/libcore/core-oj.jar\:${ark.home}/libcore/core-libart.jar\:${ark.home}/libcore/okhttp.jar\:${ark.home}/libcore/bouncycastle.jar\:${ark.home}/libcore/conscrypt.jar\:${ark.home}/libcore/apache-xml.jar\:${ark.home}/libcore/core-icu4j.jar\:${precompileDir}/spec/spec.jar --load-runtimes\=java --aot-file\=${className}.aot ${ark.options} ${className}.${bin} ${entryPoint}\:\:main -- $testExecuteArgs"; echo "Exit code\: $$?"
+paoc.arch=x86_64
+paoc.options=--compiler-check-final\=true
+platform.keyStoreURL=file\:/${testsuite.root}/tests/api/javax_net/ssl/keystore/testkeys.bks
+precompileDir=${testsuite.root}$/precompile
+testClassDirPrecompile=${precompileDir}$/${precompileTestPath}$/classes
+testsuite.root=/media/share/panda/jck_local
+
+#-----testresult-----
+description=http\://nexus.devops-spb.rnd.huawei.com/repository/qa/jck/api/java_lang/annotation/ElementType/index.html
+end=Thu Nov 13 12\:00\:05 UTC 2025
+environment=panda_amd64
+execStatus=Failed. test cases\: 4; passed\: 3; failed\: 1; first test case failure\: ElementType0001
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+javatestOS=Linux 5.15.0-25-generic (amd64)
+javatestVersion=6.0-ea+b11-2020-04-22
+script=com.sun.jck.lib.JCKScript
+sections=script_messages c2abc.ark_amd64.libcore12 testExecute.aot.ark_amd64.libcore12
+start=Thu Nov 13 12\:00\:05 UTC 2025
+test=api/java_lang/annotation/ElementType/index.html\#ElementType
+timeoutSeconds=600
+totalTime=547
+work=/media/share/panda/jck_local/jcklog-amd64-aot/api/java_lang/annotation/ElementType
+
+#section:script_messages
+----------messages:(1/24)----------
+Executing test class...
+
+#section:c2abc.ark_amd64.libcore12
+----------messages:(1/590)----------
+command: com.huawei.cqa.javatest.lib.ProcessCommandExt -a:/media/share/panda/jck_local/patterns.properties -v -execDir /media/share/panda/jck_local/precompile/api/java_lang/annotation/ElementType/index_html_ElementType -pass 0 OK -error default error LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/c2abc /media/share/panda/jck_local/precompile/api/java_lang/annotation/ElementType/index_html_ElementType/classes ElementTypeTests.abc
+----------out1:(4/498)----------
+Command is: /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/c2abc /media/share/panda/jck_local/precompile/api/java_lang/annotation/ElementType/index_html_ElementType/classes ElementTypeTests.abc
+Command environment is:
+LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib
+Execution directory is /media/share/panda/jck_local/precompile/api/java_lang/annotation/ElementType/index_html_ElementType
+----------out2:(0/0)----------
+result: Passed. OK
+
+#section:testExecute.aot.ark_amd64.libcore12
+----------messages:(1/2562)----------
+command: com.huawei.cqa.javatest.lib.ProcessCommandExt -a:/media/share/panda/jck_local/patterns.properties -v -execDir /media/share/panda/jck_local/precompile/api/java_lang/annotation/ElementType/index_html_ElementType -pass 0 OK -pass 95 OK -fail 1 test failed -fail 97 test failed -error default error LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib:/media/share/panda/jck_local/lib/linux-amd64 ANDROID_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/data ANDROID_TZDATA_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot ANDROID_I18N_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot ICU_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu TSAN_OPTIONS= bash -ce /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark_aot --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --enable-an --load-in-boot --compiler-check-final=true --paoc-panda-files ElementTypeTests.abc --paoc-output ElementTypeTests.aot --compiler-cross-arch x86_64; /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --aot-file=ElementTypeTests.aot --enable-an --load-in-boot ElementTypeTests.abc javasoft/sqe/tests/api/java/lang/annotation/ElementType/ElementTypeTests::main -- -TestCaseID ALL; echo Exit code: $?
+----------out1:(25/3700)----------
+Command is: bash -ce /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark_aot --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --enable-an --load-in-boot --compiler-check-final=true --paoc-panda-files ElementTypeTests.abc --paoc-output ElementTypeTests.aot --compiler-cross-arch x86_64; /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --aot-file=ElementTypeTests.aot --enable-an --load-in-boot ElementTypeTests.abc javasoft/sqe/tests/api/java/lang/annotation/ElementType/ElementTypeTests::main -- -TestCaseID ALL; echo Exit code: $?
+Command environment is:
+LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib:/media/share/panda/jck_local/lib/linux-amd64
+ANDROID_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/data
+ANDROID_TZDATA_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot
+ANDROID_I18N_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot
+ICU_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu
+TSAN_OPTIONS=
+Execution directory is /media/share/panda/jck_local/precompile/api/java_lang/annotation/ElementType/index_html_ElementType
+Time zone override file found: /media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/data/misc/zoneinfo/current/icu/icu_tzdata.dat
+Time zone APEX ICU file found: /media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu/icu_tzdata.dat
+I18n APEX ICU file found: /media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu/icudt68l.dat
+System W 11-13 20:00:05 1620313 1620313 ClassLoader referenced unknown path: 
+java.lang.ArrayIndexOutOfBoundsException: idx = 10; length = 10
+	at javasoft.sqe.tests.api.java.lang.annotation.ElementType.ElementTypeTests.ElementType0001(ElementTypeTests.java:40)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at javasoft.sqe.javatest.lib.MultiTest.invokeTestCase(MultiTest.java:405)
+	at javasoft.sqe.javatest.lib.MultiTest.run(MultiTest.java:194)
+	at javasoft.sqe.javatest.lib.MultiTest.run(MultiTest.java:126)
+	at javasoft.sqe.tests.api.java.lang.annotation.ElementType.ElementTypeTests.main(ElementTypeTests.java:28)
+ElementType0001: Failed. Test case throws exception: java.lang.ArrayIndexOutOfBoundsException: idx = 10; length = 10
+ElementType0002: Passed. OKAY
+ElementType0003: Passed. OKAY
+ElementType0004: Passed. OKAY
+STATUS:Failed.test cases: 4; passed: 3; failed: 1; first test case failure: ElementType0001
+----------out2:(0/0)----------
+result: Failed. test cases: 4; passed: 3; failed: 1; first test case failure: ElementType0001
+
+
+test result: Failed. test cases: 4; passed: 3; failed: 1; first test case failure: ElementType0001

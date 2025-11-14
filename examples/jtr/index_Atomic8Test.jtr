@@ -1,0 +1,95 @@
+#Test Results (version 2)
+#Thu Nov 13 12:00:06 UTC 2025
+#-----testdescription-----
+$file=/media/share/panda/jck_local/tests/api/java_util/concurrent/atomic/index.html
+$root=/media/share/panda/jck_local/tests
+context=platform.concurrentShortDelay
+embeddedProfile=1
+executeClass=javasoft.sqe.tests.api.java.util.concurrent.atomic.Atomic8Test
+id=Atomic8Test
+keywords=positive runtime
+source=Atomic8Test.java
+title=Atomic8Test - Atomic8Test api method testcases
+
+#-----environment-----
+aot=true
+ark.home=/media/share/panda/aosp/out/panda/root_fs/host/debug
+ark.options=--enable-an --load-in-boot
+ark.sysroot=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot
+ark.target.platform=ark_amd64.libcore12
+bin=abc
+command.c2abc.ark_amd64.libcore12=${agent.command} com.huawei.cqa.javatest.lib.ProcessCommandExt -a\:${testsuite.root}$/patterns.properties -v -execDir $precompileDir$/${precompileTestPath} -pass 0 "OK" -error default error LD_LIBRARY_PATH\=/usr/lib\:${ark.home}/lib\:${ark.home}/libcore_lib ${ark.home}/bin/c2abc ${c2abc.options} $testClassDirPrecompile ${className}.${bin}
+command.testExecute.aot.ark_amd64.libcore12=${agent.command} com.huawei.cqa.javatest.lib.ProcessCommandExt -a\:${testsuite.root}$/patterns.properties -v ${th} -execDir $precompileDir$/${precompileTestPath} -pass 0 "OK" -pass 95 "OK" -fail 1 "test failed" -fail 97 "test failed" -error default error LD_LIBRARY_PATH\=/usr/lib\:${ark.home}/lib\:${ark.home}/libcore_lib\:${testsuite.root}/lib/linux-amd64 ANDROID_DATA\=${ark.sysroot}/data ANDROID_TZDATA_ROOT\=${ark.sysroot} ANDROID_I18N_ROOT\=${ark.sysroot} ICU_DATA\=${ark.sysroot}/etc/icu TSAN_OPTIONS\=${ark.tsan.options} bash -ce "${ark.home}$/bin$/ark_aot --boot-panda-files\=${ark.home}/libcore/core-oj.jar\:${ark.home}/libcore/core-libart.jar\:${ark.home}/libcore/okhttp.jar\:${ark.home}/libcore/bouncycastle.jar\:${ark.home}/libcore/conscrypt.jar\:${ark.home}/libcore/apache-xml.jar\:${ark.home}/libcore/core-icu4j.jar\:${precompileDir}/spec/spec.jar --load-runtimes\=java ${ark.options} ${paoc.options} --paoc-panda-files ${className}.${bin} --paoc-output ${className}.aot --compiler-cross-arch ${paoc.arch}; ${ark.home}$/bin$/ark --boot-panda-files\=${ark.home}/libcore/core-oj.jar\:${ark.home}/libcore/core-libart.jar\:${ark.home}/libcore/okhttp.jar\:${ark.home}/libcore/bouncycastle.jar\:${ark.home}/libcore/conscrypt.jar\:${ark.home}/libcore/apache-xml.jar\:${ark.home}/libcore/core-icu4j.jar\:${precompileDir}/spec/spec.jar --load-runtimes\=java --aot-file\=${className}.aot ${ark.options} ${className}.${bin} ${entryPoint}\:\:main -- $testExecuteArgs"; echo "Exit code\: $$?"
+paoc.arch=x86_64
+paoc.options=--compiler-check-final\=true
+platform.concurrentShortDelay=1000
+platform.keyStoreURL=file\:/${testsuite.root}/tests/api/javax_net/ssl/keystore/testkeys.bks
+precompileDir=${testsuite.root}$/precompile
+testClassDirPrecompile=${precompileDir}$/${precompileTestPath}$/classes
+testsuite.root=/media/share/panda/jck_local
+
+#-----testresult-----
+description=http\://nexus.devops-spb.rnd.huawei.com/repository/qa/jck/api/java_util/concurrent/atomic/index.html
+end=Thu Nov 13 12\:00\:06 UTC 2025
+environment=panda_amd64
+execStatus=Failed. test failed [E/runtime E]
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+javatestOS=Linux 5.15.0-25-generic (amd64)
+javatestVersion=6.0-ea+b11-2020-04-22
+script=com.sun.jck.lib.JCKScript
+sections=script_messages c2abc.ark_amd64.libcore12 testExecute.aot.ark_amd64.libcore12
+start=Thu Nov 13 12\:00\:05 UTC 2025
+test=api/java_util/concurrent/atomic/index.html\#Atomic8Test
+timeoutSeconds=600
+totalTime=1074
+work=/media/share/panda/jck_local/jcklog-amd64-aot/api/java_util/concurrent/atomic
+
+#section:script_messages
+----------messages:(1/24)----------
+Executing test class...
+
+#section:c2abc.ark_amd64.libcore12
+----------messages:(1/575)----------
+command: com.huawei.cqa.javatest.lib.ProcessCommandExt -a:/media/share/panda/jck_local/patterns.properties -v -execDir /media/share/panda/jck_local/precompile/api/java_util/concurrent/atomic/index_html_Atomic8Test -pass 0 OK -error default error LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/c2abc /media/share/panda/jck_local/precompile/api/java_util/concurrent/atomic/index_html_Atomic8Test/classes Atomic8Test.abc
+----------out1:(4/483)----------
+Command is: /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/c2abc /media/share/panda/jck_local/precompile/api/java_util/concurrent/atomic/index_html_Atomic8Test/classes Atomic8Test.abc
+Command environment is:
+LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib
+Execution directory is /media/share/panda/jck_local/precompile/api/java_util/concurrent/atomic/index_html_Atomic8Test
+----------out2:(0/0)----------
+result: Passed. OK
+
+#section:testExecute.aot.ark_amd64.libcore12
+----------messages:(1/2547)----------
+command: com.huawei.cqa.javatest.lib.ProcessCommandExt -a:/media/share/panda/jck_local/patterns.properties -v -execDir /media/share/panda/jck_local/precompile/api/java_util/concurrent/atomic/index_html_Atomic8Test -pass 0 OK -pass 95 OK -fail 1 test failed -fail 97 test failed -error default error LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib:/media/share/panda/jck_local/lib/linux-amd64 ANDROID_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/data ANDROID_TZDATA_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot ANDROID_I18N_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot ICU_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu TSAN_OPTIONS= bash -ce /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark_aot --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --enable-an --load-in-boot --compiler-check-final=true --paoc-panda-files Atomic8Test.abc --paoc-output Atomic8Test.aot --compiler-cross-arch x86_64; /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --aot-file=Atomic8Test.aot --enable-an --load-in-boot Atomic8Test.abc javasoft/sqe/tests/api/java/util/concurrent/atomic/Atomic8Test::main -- -platform.concurrentShortDelay 1000; echo Exit code: $?
+----------out1:(24/6564)----------
+Command is: bash -ce /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark_aot --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --enable-an --load-in-boot --compiler-check-final=true --paoc-panda-files Atomic8Test.abc --paoc-output Atomic8Test.aot --compiler-cross-arch x86_64; /media/share/panda/aosp/out/panda/root_fs/host/debug/bin/ark --boot-panda-files=/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar:/media/share/panda/jck_local/precompile/spec/spec.jar --load-runtimes=java --aot-file=Atomic8Test.aot --enable-an --load-in-boot Atomic8Test.abc javasoft/sqe/tests/api/java/util/concurrent/atomic/Atomic8Test::main -- -platform.concurrentShortDelay 1000; echo Exit code: $?
+Command environment is:
+LD_LIBRARY_PATH=/usr/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/lib:/media/share/panda/aosp/out/panda/root_fs/host/debug/libcore_lib:/media/share/panda/jck_local/lib/linux-amd64
+ANDROID_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/data
+ANDROID_TZDATA_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot
+ANDROID_I18N_ROOT=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot
+ICU_DATA=/media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu
+TSAN_OPTIONS=
+Execution directory is /media/share/panda/jck_local/precompile/api/java_util/concurrent/atomic/index_html_Atomic8Test
+Time zone override file found: /media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/data/misc/zoneinfo/current/icu/icu_tzdata.dat
+Time zone APEX ICU file found: /media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu/icu_tzdata.dat
+I18n APEX ICU file found: /media/share/panda/aosp/out/panda/root_fs/host/debug/sysroot/etc/icu/icudt68l.dat
+System W 11-13 20:00:06 1620331 1620331 ClassLoader referenced unknown path: 
+[TID 18b96b] E/verifier: Cannot link class: Cannot find class Ljava/lang/management/ManagementFactory; in boot panda files: [, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar, /media/share/panda/jck_local/precompile/spec/spec.jar, Atomic8Test.abc]
+[TID 18b96b] E/verifier: Cannot link class: Cannot find class Ljava/lang/management/ManagementFactory; in boot panda files: [, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar, /media/share/panda/jck_local/precompile/spec/spec.jar, Atomic8Test.abc]
+[TID 18b96b] E/verifier: Cannot link class: Cannot find class Ljava/lang/management/ThreadMXBean; in boot panda files: [, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar, /media/share/panda/jck_local/precompile/spec/spec.jar, Atomic8Test.abc]
+[TID 18b96b] E/verifier: Cannot link class: Cannot find class Ljava/lang/management/ThreadMXBean; in boot panda files: [, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-oj.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-libart.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/okhttp.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/bouncycastle.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/conscrypt.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/apache-xml.jar, /media/share/panda/aosp/out/panda/root_fs/host/debug/libcore/core-icu4j.jar, /media/share/panda/jck_local/precompile/spec/spec.jar, Atomic8Test.abc]
+[TID 18b96b] E/verifier: Verifier error 54: Cache miss for method at offset
+[TID 18b96b] E/verifier: Verifier error 62: Cannot resolve method id
+[TID 18b96b] E/verifier: Method verification failed: void javasoft.sqe.tests.api.java.util.concurrent.JSR166TestCase::printAllStackTraces()
+[TID 18b96b] E/verifier: Class verification failed: 'javasoft.sqe.tests.api.java.util.concurrent.JSR166TestCase' method: void javasoft.sqe.tests.api.java.util.concurrent.JSR166TestCase::printAllStackTraces()
+[TID 18b96b] E/runtime: Cannot initialize class 'javasoft.sqe.tests.api.java.util.concurrent.atomic.Atomic8Test'
+java.lang.VerifyError: Ljavasoft/sqe/tests/api/java/util/concurrent/JSR166TestCase;
+Exception in thread "main" java.lang.VerifyError: Ljavasoft/sqe/tests/api/java/util/concurrent/JSR166TestCase;
+----------out2:(0/0)----------
+result: Failed. test failed [E/runtime E]
+
+
+test result: Failed. test failed [E/runtime E]
